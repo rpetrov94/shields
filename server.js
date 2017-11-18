@@ -190,7 +190,7 @@ function getBadge(token, res, end) {
   client.hgetall(token, function (error, badgeData) {
     if (error || badgeData === null) {
       res.statusCode = 404;
-      res.write(error);
+      res.write("error: " + error);
       res.end();
     } else {
       console.log("for request with token " + token);
