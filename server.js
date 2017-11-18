@@ -193,6 +193,8 @@ function getBadge(token, res, end) {
       res.write(error);
       res.end();
     } else {
+      console.log("for request with token " + token);
+      console.log(badgeData);
       createBadge(badgeData.subject, {}, badgeData.status, badgeData.color, "svg", res, end);
     }
   });
