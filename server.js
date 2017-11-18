@@ -150,6 +150,8 @@ camp.notfound(/.*/, function(query, match, end, request) {
 });
 
 var randtoken = require('rand-token').generator();
+var redis = require('redis');
+var client = redis.createClient(process.env.REDIS_URL);
 
 // My stuff.
 camp.route(/generate/,
@@ -159,11 +161,67 @@ function(data, match, end, ask) {
   let token = randtoken.generate(32);
   let auth = randtoken.generate(64);
 
+  client.hset(token, "auth", auth, redis.print);
+
   ask.res.setHeader('Content-Type', 'application/json');
   ask.res.write(JSON.stringify({token, auth}));
   ask.res.end();
 });
 
+camp.route(/([^/]+)/,
+  function(data, match, end, ask) {
+    analytics.noteRequest(data, match);
+
+    let token = match[0];
+    if (ask.req.method === 'GET') {
+      getBadge(token, ask.res);
+    } else if (ask.req.method === 'PUT') {
+      let body = [];
+      ask.req.on('data', (chunk) => {
+        body.push(chunk);
+      }).on('end', () => {
+        body = Buffer.concat(body).toString();
+        updateBadge(token, body, ask.res);
+      });
+    }
+  });
+
+function getBadge(token, res) {
+
+}
+
+function updateBadge(token, body, res) {
+  let jsonBody = JSON.parse(body);
+  client.hget(token, "auth", function (error, storedAuth) {
+    if (error) {
+      res.statusCode = 404;
+      res.write(error);
+      res.end();
+    } else {
+      if (storedAuth === jsonBody.auth) {
+        if (jsonBody.subject) {
+          client.hset(token, "subject", jsonBody.subject, redis.print);
+        }
+
+        if (jsonBody.status) {
+          client.hset(token, "status", jsonBody.status, redis.print);
+        }
+
+        if (jsonBody.color) {
+          client.hset(token, "color", jsonBody.color, redis.print);
+        }
+
+        res.statusCode = 200;
+        res.end();
+
+      } else {
+        console.log("failed authentication");
+        res.statusCode = 403; // permission denied?
+        res.end();
+      }
+    }
+  });
+}
 
 // Vendors.
 

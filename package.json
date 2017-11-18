@@ -34,7 +34,7 @@
     "pretty-bytes": "^4.0.2",
     "query-string": "^5.0.0",
     "rand-token": "^0.4.0",
-    "redis": "~2.6.2",
+    "redis": "^2.6.5",
     "request": "~2.83.0",
     "semver": "~5.4.1",
     "svgo": "~0.7.1",
