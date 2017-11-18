@@ -188,7 +188,7 @@ camp.route(/shield\/([^/]+)/,
 
 function getBadge(token, res, end) {
   client.hgetall(token, function (error, badgeData) {
-    if (error) {
+    if (error || badgeData === null) {
       res.statusCode = 404;
       res.write("error: " + error);
       res.end();
@@ -201,7 +201,7 @@ function getBadge(token, res, end) {
 function updateBadge(token, body, res) {
   let jsonBody = JSON.parse(body);
   client.hget(token, "auth", function (error, storedAuth) {
-    if (error) {
+    if (error || storedAuth === null) {
       res.statusCode = 404;
       res.write(error);
       res.end();
