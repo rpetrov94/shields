@@ -156,8 +156,11 @@ camp.route(/generate/,
 function(data, match, end, ask) {
   analytics.noteRequest(data, match);
 
+  let token = randtoken.generate(32);
+  let auth = randtoken.generate(64);
+
   ask.res.setHeader('Content-Type', 'application/json');
-  ask.res.write(JSON.stringify({"token": randtoken.generate(32), "auth": randtoken.generate(64)}));
+  ask.res.write(JSON.stringify({token, auth}));
   ask.res.end();
 });
 
