@@ -149,6 +149,17 @@ camp.notfound(/.*/, function(query, match, end, request) {
   end(null, {template: '404.html'});
 });
 
+// My stuff.
+camp.route(/generate/,
+function(data, match, end, ask) {
+  analytics.noteRequest(data, match);
+
+  ask.res.setHeader('Content-Type', 'application/json');
+  ask.res.write(JSON.stringify({"token": "abc", "auth": "cba"}));
+  ask.res.end();
+});
+
+
 // Vendors.
 
 // JIRA issue integration
