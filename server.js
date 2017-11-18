@@ -168,7 +168,7 @@ function(data, match, end, ask) {
   ask.res.end();
 });
 
-camp.route(/([^/]+)/,
+camp.route(/shield\/([^/]+)/,
   function(data, match, end, ask) {
     analytics.noteRequest(data, match);
 
