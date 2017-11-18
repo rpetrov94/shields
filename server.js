@@ -188,7 +188,7 @@ camp.route(/([^/]+)/,
 
 function getBadge(token, res, end) {
   client.hgetall(token, function (error, badgeData) {
-    if (error) {
+    if (error || badgeData === null) {
       res.statusCode = 404;
       res.write(error);
       res.end();
