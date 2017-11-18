@@ -172,7 +172,7 @@ camp.route(/shield\/([^/]+)/,
   function(data, match, end, ask) {
     analytics.noteRequest(data, match);
 
-    let token = match[0];
+    let token = match[1];
     if (ask.req.method === 'GET') {
       getBadge(token, ask.res, end);
     } else if (ask.req.method === 'PUT') {
@@ -188,13 +188,11 @@ camp.route(/shield\/([^/]+)/,
 
 function getBadge(token, res, end) {
   client.hgetall(token, function (error, badgeData) {
-    if (error || badgeData === null) {
+    if (error) {
       res.statusCode = 404;
       res.write("error: " + error);
       res.end();
     } else {
-      console.log("for request with token " + token);
-      console.log(badgeData);
       createBadge(badgeData.subject, {}, badgeData.status, badgeData.color, "svg", res, end);
     }
   });
@@ -225,7 +223,6 @@ function updateBadge(token, body, res) {
         res.end();
 
       } else {
-        console.log("failed authentication");
         res.statusCode = 403; // permission denied?
         res.end();
       }
