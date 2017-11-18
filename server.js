@@ -174,7 +174,7 @@ camp.route(/([^/]+)/,
 
     let token = match[0];
     if (ask.req.method === 'GET') {
-      getBadge(token, ask.res);
+      getBadge(token, ask.res, end);
     } else if (ask.req.method === 'PUT') {
       let body = [];
       ask.req.on('data', (chunk) => {
@@ -186,8 +186,16 @@ camp.route(/([^/]+)/,
     }
   });
 
-function getBadge(token, res) {
-
+function getBadge(token, res, end) {
+  client.hgetall(token, function (error, badgeData) {
+    if (error) {
+      res.statusCode = 404;
+      res.write(error);
+      res.end();
+    } else {
+      createBadge(badgeData.subject, {}, badgeData.status, badgeData.color, "png", res, end);
+    }
+  });
 }
 
 function updateBadge(token, body, res) {
@@ -7487,6 +7495,34 @@ cache(function(data, match, sendBadge, request) {
   });
 }));
 
+function createBadge(subject, data, status, color, format, res, end) {
+// Badge creation.
+  try {
+    var badgeData = getBadgeData(subject, data);
+    badgeData.colorscheme = undefined;
+    if (data.label !== undefined) {
+      badgeData.text[0] = '' + data.label;
+    }
+    badgeData.text[1] = status;
+    if (badgeData.colorB === undefined) {
+      if (sixHex(color)) {
+        badgeData.colorB = '#' + color;
+      } else if (badgeData.colorA === undefined) {
+        badgeData.colorscheme = color;
+      }
+    }
+    if (isValidStyle(data.style)) {
+      badgeData.template = data.style;
+    }
+    const svg = makeBadge(badgeData);
+    makeSend(format, res, end)(svg);
+  } catch (e) {
+    log.error(e.stack);
+    const svg = makeBadge({text: ['error', 'bad badge'], colorscheme: 'red'});
+    makeSend(format, res, end)(svg);
+  }
+}
+
 // Any badge.
 camp.route(/^\/(:|badge\/)(([^-]|--)*?)-(([^-]|--)*)-(([^-]|--)+)\.(svg|png|gif|jpg)$/,
 function(data, match, end, ask) {
@@ -7507,29 +7543,7 @@ function(data, match, end, ask) {
   }
   ask.res.setHeader('Last-Modified', serverStartTime.toGMTString());
 
-  // Badge creation.
-  try {
-    var badgeData = getBadgeData(subject, data);
-    badgeData.colorscheme = undefined;
-    if (data.label !== undefined) { badgeData.text[0] = '' + data.label; }
-    badgeData.text[1] = status;
-    if (badgeData.colorB === undefined) {
-      if (sixHex(color)) {
-        badgeData.colorB = '#' + color;
-      } else if (badgeData.colorA === undefined) {
-        badgeData.colorscheme = color;
-      }
-    }
-    if (isValidStyle(data.style)) {
-      badgeData.template = data.style;
-    }
-    const svg = makeBadge(badgeData);
-    makeSend(format, ask.res, end)(svg);
-  } catch(e) {
-    log.error(e.stack);
-    const svg = makeBadge({text: ['error', 'bad badge'], colorscheme: 'red'});
-    makeSend(format, ask.res, end)(svg);
-  }
+  createBadge(subject, data, status, color, format, ask.res, end);
 });
 
 // Production cache debugging.
