@@ -149,13 +149,15 @@ camp.notfound(/.*/, function(query, match, end, request) {
   end(null, {template: '404.html'});
 });
 
+var randtoken = require('rand-token').generator();
+
 // My stuff.
 camp.route(/generate/,
 function(data, match, end, ask) {
   analytics.noteRequest(data, match);
 
   ask.res.setHeader('Content-Type', 'application/json');
-  ask.res.write(JSON.stringify({"token": "abc", "auth": "cba"}));
+  ask.res.write(JSON.stringify({"token": randtoken.generate(32), "auth": randtoken.generate(64)}));
   ask.res.end();
 });
 
