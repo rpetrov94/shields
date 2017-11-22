@@ -162,6 +162,7 @@ function(data, match, end, ask) {
   let auth = randtoken.generate(64);
 
   client.hset(token, "auth", auth, redis.print);
+  client.hset(token, "modified", new Date().toGMTString())
 
   ask.res.setHeader('Content-Type', 'application/json');
   ask.res.write(JSON.stringify({token, auth}));
@@ -193,6 +194,11 @@ function getBadge(token, res, end) {
       res.write("error: " + error);
       res.end();
     } else {
+      // Cache management - the badge is constant.
+      var cacheDuration = (3600*1*1)|0;    // 1 hour.
+      res.setHeader('Cache-Control', 'max-age=' + cacheDuration);
+      res.setHeader('Last-Modified', badgeData.modified);
+
       createBadge(badgeData.subject, {}, badgeData.status, badgeData.color, "svg", res, end);
     }
   });
@@ -218,6 +224,8 @@ function updateBadge(token, body, res) {
         if (jsonBody.color) {
           client.hset(token, "color", jsonBody.color, redis.print);
         }
+
+        client.hset(token, "modified", new Date().toGMTString());
 
         res.statusCode = 200;
         res.end();
